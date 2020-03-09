@@ -31,7 +31,7 @@
 //
 use
 {
-	std          :: { fmt, io::{ self, Read, Cursor, IoSliceMut }, pin::Pin, task::{ Poll, Context }, borrow::{ Borrow, BorrowMut } } ,
+	std          :: { fmt, io::{ self, Read, Cursor, IoSlice, IoSliceMut }, pin::Pin, task::{ Poll, Context }, borrow::{ Borrow, BorrowMut } } ,
 	futures_core :: { TryStream, ready                                  } ,
 	futures_sink :: { Sink                                              } ,
 	futures_task :: { noop_waker                                        } ,
@@ -53,7 +53,7 @@ use pharos::{ Observable, ObserveConfig, Events };
 //
 #[ derive(Debug) ]
 //
-enum ReadState< B: AsRef<[u8]> >
+enum ReadState<B>
 {
 	Ready{ chunk: Cursor<B> } ,
 	Error{ error: io::Error } ,
@@ -66,26 +66,24 @@ enum ReadState< B: AsRef<[u8]> >
 pub struct WsIo<St, I>
 where
 
-	St: Sink< I, Error=io::Error > + TryStream< Ok=I, Error=io::Error > + Unpin,
-	I: AsRef<[u8]>
+	St: Unpin,
 {
-	inner: St                   ,
-	state: Option<ReadState<I>> ,
+	inner    : St                   ,
+	state    : Option<ReadState<I>> ,
+	write_err: Option<io::Error>    ,
 }
 
-impl<St, I: AsRef<[u8]>> Unpin for WsIo<St, I>
+impl<St, I> Unpin for WsIo<St, I>
 where
 
-	St: Sink< I, Error=io::Error > + TryStream< Ok=I, Error=io::Error > + Unpin,
-	I: AsRef<[u8]>
+	St: Unpin,
 {}
 
 
 impl<St, I> WsIo<St, I>
 where
 
-	St: Sink< I, Error=io::Error > + TryStream< Ok=I, Error=io::Error > + Unpin,
-	I: AsRef<[u8]>
+	St: Unpin,
 
 {
 	/// Create a new WsIo.
@@ -94,8 +92,9 @@ where
 	{
 		Self
 		{
-			inner        ,
-			state : None ,
+			inner            ,
+			state     : None ,
+			write_err : None ,
 		}
 	}
 
@@ -138,6 +137,11 @@ where
 	//   because again we can not return it immediately.
 	//
 	fn poll_read_impl( mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut [u8] ) -> Poll< io::Result<usize> >
+	where
+
+		St: TryStream< Ok=I, Error=io::Error >,
+		I: AsRef<[u8]>,
+
 	{
 		trace!( "WsIo: poll_read called" );
 
@@ -283,7 +287,17 @@ where
 	}
 
 
+	// Try to fill as many buffers as possible. Only go the next buffer if the current one is full.
+	//
+	// If poll_read returns Pending and we already have data, we can ignore it.
+	// If poll_read returns an error and we already have data, we store it for the next call.
+	//
 	fn poll_read_vectored_impl( mut self: Pin<&mut Self>, cx: &mut Context<'_>, bufs: &mut [IoSliceMut<'_>] ) -> Poll< io::Result<usize> >
+	where
+
+		St: TryStream< Ok=I, Error=io::Error >,
+		I: AsRef<[u8]>,
+
 	{
 		let mut have_read = 0;
 
@@ -355,36 +369,40 @@ where
 
 
 	fn poll_write_impl<'a>( mut self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &'a [u8] ) -> Poll< io::Result<usize> >
+	where
 
-		where I: From<&'a[u8]>
+		St: Sink< I, Error=io::Error >,
+		I: From< Vec<u8> >,
 
 	{
 		trace!( "{:?}: AsyncWrite - poll_write", self );
 
+		if let Some( e ) = self.write_err.take()
+		{
+			return Poll::Ready( Err(e) );
+		}
+
+		// Must call this before start_send
+		//
 		let res = ready!( Pin::new( &mut self.inner ).poll_ready(cx) );
 
 		if let Err( e ) = res
 		{
-			trace!( "{:?}: AsyncWrite - poll_write SINK not READY", self );
+			trace!( "{:?}: AsyncWrite - poll_write SINK ERROR", self );
 
-			return Poll::Ready(Err( e ))
+			return Poll::Ready( Err(e) );
 		}
 
 
-		// FIXME: avoid extra copy?
-		// would require a different signature of both AsyncWrite and Tungstenite (Bytes from bytes crate for example)
-		//
-		match Pin::new( &mut self.inner ).start_send( buf.into() )
+		match Pin::new( &mut self.inner ).start_send( buf.to_vec().into() )
 		{
 			Ok (_) =>
 			{
-				// The Compat01As03Sink always keeps one item buffered. Also, client code like
-				// futures-codec and tokio-codec turn a flush on their sink in a poll_write here.
+				// Client code like futures-codec and tokio-codec turn a flush on their sink in a poll_write here.
 				// Combinators like CopyBufInto will only call flush after their entire input
-				// stream is exhausted.
+				// stream is exhausted. This is a problem if the source temporarily goes dry.
 				// We actually don't buffer here, but always create an entire websocket message from the
-				// buffer we get in poll_write, so there is no reason not to flush here, especially
-				// since the sink will always buffer one item until flushed.
+				// buffer we get in poll_write, so there is no reason not to flush here.
 				// This means the burden is on the caller to call with a buffer of sufficient size
 				// to avoid perf problems, but there is BufReader and BufWriter in the futures library to
 				// help with that if necessary.
@@ -396,19 +414,113 @@ where
 				//
 				// So, flush!
 				//
-				let _ = Pin::new( &mut self.inner ).poll_flush( cx );
+				let     waker   = noop_waker();
+				let mut context = Context::from_waker( &waker );
+
+				match Pin::new( &mut self.inner ).poll_flush( &mut context )
+				{
+					Poll::Pending         | // ignore
+					Poll::Ready( Ok(_) ) => {}
+
+					Poll::Ready( Err(e)) => self.write_err = e.into(),
+				}
+
 
 				trace!( "{:?}: AsyncWrite - poll_write, wrote {} bytes", self, buf.len() );
 
-				Poll::Ready(Ok ( buf.len() ))
+				Poll::Ready(Ok( buf.len() ))
 			}
 
-			Err(e) => Poll::Ready(Err( e )),
+			Err(e) => Poll::Ready( Err(e) ),
 		}
 	}
 
 
+	fn poll_write_vectored_impl<'a>( mut self: Pin<&mut Self>, cx: &mut Context<'_>, bufs: &'a[ IoSlice<'a> ] ) -> Poll< io::Result<usize> >
+	where
+
+		St: Sink< I, Error=io::Error >,
+		I: From< Vec<u8> >,
+
+	{
+		trace!( "{:?}: AsyncWrite - poll_write", self );
+
+		if let Some( e ) = self.write_err.take()
+		{
+			return Poll::Ready( Err(e) );
+		}
+
+
+		// Must call this before start_send
+		//
+		let res = ready!( Pin::new( &mut self.inner ).poll_ready(cx) );
+
+		if let Err( e ) = res
+		{
+			trace!( "{:?}: AsyncWrite - poll_write SINK not READY", self );
+
+			return Poll::Ready( Err(e) )
+		}
+
+
+		let mut wrote = 0;
+
+		for buf in bufs { wrote += buf.len(); }
+
+		let mut item = Vec::with_capacity( wrote );
+
+		for buf in bufs
+		{
+			item.copy_from_slice( buf );
+		}
+
+
+		match Pin::new( &mut self.inner ).start_send( item.into() )
+		{
+			Ok (_) =>
+			{
+				// Client code like futures-codec and tokio-codec turn a flush on their sink in a poll_write here.
+				// Combinators like CopyBufInto will only call flush after their entire input
+				// stream is exhausted. This is a problem if the source temporarily goes dry.
+				// We actually don't buffer here, but always create an entire websocket message from the
+				// buffer we get in poll_write, so there is no reason not to flush here.
+				// This means the burden is on the caller to call with a buffer of sufficient size
+				// to avoid perf problems, but there is BufReader and BufWriter in the futures library to
+				// help with that if necessary.
+				//
+				// We will ignore the Pending return from the flush, since we took the data and
+				// must return how many bytes we took. The client should not try to send this data again.
+				// This does mean there might be a spurious wakeup, TODO: we should test that.
+				// We could supply a dummy context to avoid the wakup.
+				//
+				// So, flush!
+				//
+				let     waker   = noop_waker();
+				let mut context = Context::from_waker( &waker );
+
+				match Pin::new( &mut self.inner ).poll_flush( &mut context )
+				{
+					Poll::Pending         | // ignore
+					Poll::Ready( Ok(_) ) => {}
+
+					Poll::Ready( Err(e)) => self.write_err = e.into(),
+				}
+
+				trace!( "{:?}: AsyncWrite - poll_write, wrote {} bytes", self, wrote );
+
+				Poll::Ready(Ok( wrote ))
+			}
+
+			Err(e) => Poll::Ready( Err(e) ),
+		}
+	}
+
+
+
 	fn poll_flush_impl(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll< io::Result<()> >
+	where
+
+		St: Sink< I, Error=io::Error >
 	{
 		trace!( "{:?}: AsyncWrite - poll_flush", self );
 
@@ -421,6 +533,9 @@ where
 
 
 	fn poll_close_impl( mut self: Pin<&mut Self>, cx: &mut Context<'_> ) -> Poll< io::Result<()> >
+	where
+
+		St: Sink< I, Error=io::Error >
 	{
 		trace!( "{:?}: AsyncWrite - poll_close", self );
 
@@ -430,12 +545,7 @@ where
 
 
 
-impl<St, I> fmt::Debug for WsIo<St, I>
-where
-
-	St: Sink< I, Error=io::Error > + TryStream< Ok=I, Error=io::Error > + Unpin,
-	I: AsRef<[u8]>
-
+impl<St: Unpin, I> fmt::Debug for WsIo<St, I>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
@@ -459,8 +569,8 @@ where
 impl<St, I> AsyncWrite for WsIo<St, I>
 where
 
-	St: Sink< I, Error=io::Error > + TryStream< Ok=I, Error=io::Error > + Unpin,
-	for<'a> I: AsRef<[u8]> + From<&'a[u8]>
+	St: Sink< I, Error=io::Error > + Unpin,
+	I: From< Vec<u8> >
 
 {
 	/// Will always flush the underlying socket. Will always create an entire Websocket message from every write,
@@ -469,6 +579,12 @@ where
 	fn poll_write( self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &[u8] ) -> Poll< io::Result<usize> >
 	{
 		self.poll_write_impl( cx, buf )
+	}
+
+
+	fn poll_write_vectored( self: Pin<&mut Self>, cx: &mut Context<'_>, bufs: &[ IoSlice<'_> ] ) -> Poll< io::Result<usize> >
+	{
+		self.poll_write_vectored_impl( cx, bufs )
 	}
 
 
@@ -493,8 +609,8 @@ where
 impl<St, I> TokAsyncWrite for WsIo<St, I>
 where
 
-	St: Sink< I, Error=io::Error > + TryStream< Ok=I, Error=io::Error > + Unpin,
-	for<'a> I: AsRef<[u8]> + From<&'a[u8]>
+	St: Sink< I, Error=io::Error > + Unpin,
+	I: From< Vec<u8> >
 
 {
 	fn poll_write( self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &[u8] ) -> Poll< io::Result<usize> >
@@ -518,27 +634,10 @@ where
 
 
 
-
-
-
-
-/// When None is returned, it means it is safe to drop the underlying connection.
-///
-/// TODO: This will only read at most one websocket message at a time. It would be possible to try
-/// and read more, but the next poll on the stream might return pending, and then cause a
-/// spurious wakeup sometime later even though we can't return pending from this, because
-/// we did read some. It could only be a performance issue (reducing throughput), so for now
-/// we leave it like this, but later we might try to benchmark and test this thoroughly to
-/// see if it is worth changing.
-///
-/// ### Errors
-///
-/// TODO: document errors
-//
 impl<St, I> AsyncRead  for WsIo<St, I>
 where
 
-	St: Sink< I, Error=io::Error > + TryStream< Ok=I, Error=io::Error > + Unpin,
+	St: TryStream< Ok=I, Error=io::Error > + Unpin,
 	I: AsRef<[u8]>
 
 {
@@ -561,7 +660,7 @@ where
 impl<St, I> TokAsyncRead for WsIo<St, I>
 where
 
-	St: Sink< I, Error=io::Error > + TryStream< Ok=I, Error=io::Error > + Unpin,
+	St: TryStream< Ok=I, Error=io::Error > + Unpin,
 	I: AsRef<[u8]>
 
 {
@@ -580,7 +679,6 @@ impl<St, I, Ev> Observable<Ev> for WsIo<St, I>
 where
 
 	St: Sink< I, Error=io::Error > + TryStream< Ok=I, Error=io::Error > + Observable<Ev> + Unpin,
-	I: AsRef<[u8]>,
 	Ev: Clone + Send + 'static,
 
 {
@@ -598,7 +696,6 @@ impl<St, I> Borrow<St> for WsIo<St, I>
 where
 
 	St: Sink< I, Error=io::Error > + TryStream< Ok=I, Error=io::Error > + Unpin,
-	I: AsRef<[u8]>,
 
 {
 	fn borrow( &self ) -> &St
@@ -613,7 +710,6 @@ impl<St, I> BorrowMut<St> for WsIo<St, I>
 where
 
 	St: Sink< I, Error=io::Error > + TryStream< Ok=I, Error=io::Error > + Unpin,
-	I: AsRef<[u8]>,
 
 {
 	fn borrow_mut( &mut self ) -> &mut St
