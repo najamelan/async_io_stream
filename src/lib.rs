@@ -471,7 +471,7 @@ where
 
 		for buf in bufs
 		{
-			item.copy_from_slice( buf );
+			item.extend_from_slice( buf );
 		}
 
 

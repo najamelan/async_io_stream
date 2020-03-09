@@ -1,3 +1,5 @@
+#![ allow( dead_code ) ]
+
 use
 {
 	futures :: { *  } ,
@@ -88,25 +90,116 @@ impl Stream for TestStream
 }
 
 
-impl Sink< Vec<u8> > for TestStream
+
+
+
+
+
+#[ derive( Debug, PartialEq, Eq ) ]
+//
+pub enum ReadyAction
+{
+	Pending                ,
+	Ok                     ,
+	Error( io::ErrorKind ) ,
+}
+
+#[ derive( Debug, PartialEq, Eq ) ]
+//
+pub enum SendAction
+{
+	Ok                     ,
+	Error( io::ErrorKind ) ,
+}
+
+#[ derive( Debug, PartialEq, Eq ) ]
+//
+pub enum FlushAction
+{
+	Pending                ,
+	Ok                     ,
+	Error( io::ErrorKind ) ,
+}
+
+
+pub struct TestSink
+{
+	pub poll_ready: usize , // # times poll_ready was called.
+	pub start_send: usize ,
+	pub poll_flush: usize ,
+
+	pub ready_actions : Vec< ReadyAction > ,
+	pub send_actions  : Vec< SendAction  > ,
+	pub flush_actions : Vec< FlushAction > ,
+
+	pub items: Vec< Vec<u8> > ,
+}
+
+
+impl TestSink
+{
+	pub fn new( ready_actions: Vec< ReadyAction>, send_actions: Vec< SendAction>, flush_actions: Vec< FlushAction> ) -> Self
+	{
+		Self
+		{
+			poll_ready: 0 ,
+			start_send: 0 ,
+			poll_flush: 0 ,
+			ready_actions ,
+			send_actions  ,
+			flush_actions ,
+
+			items: Vec::new() ,
+		}
+	}
+}
+
+
+impl Sink< Vec<u8> > for TestSink
 {
 	type Error = io::Error;
 
-	fn poll_ready( self: Pin<&mut Self>, _cx: &mut Context ) -> Poll<Result<(), Self::Error>>
+	fn poll_ready( mut self: Pin<&mut Self>, _cx: &mut Context ) -> Poll<Result<(), Self::Error>>
 	{
-		Poll::Ready(Ok(()))
+		self.poll_ready += 1;
+
+		match self.ready_actions[ self.poll_ready - 1 ]
+		{
+			ReadyAction::Pending  => Poll::Pending                           ,
+			ReadyAction::Ok       => Poll::Ready( Ok(())                   ) ,
+			ReadyAction::Error(e) => Poll::Ready( Err( io::Error::from(e) )) ,
+		}
 	}
 
 
-	fn start_send( self: Pin<&mut Self>, _item: Vec<u8> ) -> Result<(), Self::Error>
+	fn start_send( mut self: Pin<&mut Self>, item: Vec<u8> ) -> Result<(), Self::Error>
 	{
-		Ok(())
+		self.start_send += 1;
+
+
+		match self.send_actions[ self.start_send - 1 ]
+		{
+			SendAction::Error(e) => Err( io::Error::from(e) ) ,
+
+			SendAction::Ok =>
+			{
+				self.items.push( item );
+				Ok(())
+			}
+		}
 	}
 
 
-	fn poll_flush( self: Pin<&mut Self>, _cx: &mut Context ) -> Poll<Result<(), Self::Error>>
+	fn poll_flush( mut self: Pin<&mut Self>, _cx: &mut Context ) -> Poll<Result<(), Self::Error>>
 	{
-		Poll::Ready(Ok(()))
+		self.poll_flush += 1;
+
+		match self.flush_actions[ self.poll_flush - 1 ]
+		{
+			FlushAction::Pending  => Poll::Pending                           ,
+			FlushAction::Ok       => Poll::Ready( Ok(())                   ) ,
+			FlushAction::Error(e) => Poll::Ready( Err( io::Error::from(e) )) ,
+		}
 	}
 
 

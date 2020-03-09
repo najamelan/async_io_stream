@@ -24,15 +24,13 @@ mod common;
 
 use
 {
-	common       :: { *               } ,
-	ws_stream_io :: { *               } ,
-	// async_std    :: { *               } ,
-	futures      :: { *, task::noop_waker } ,
-	std          :: { task::{ Poll, Context }, pin::Pin } ,
-	pretty_assertions :: { assert_eq } ,
-	assert_matches    :: { * } ,
-	log               :: { * } ,
-
+	common            :: { *                                 } ,
+	ws_stream_io      :: { *                                 } ,
+	futures           :: { *, task::noop_waker               } ,
+	std               :: { task::{ Poll, Context }, pin::Pin } ,
+	pretty_assertions :: { assert_eq                         } ,
+	assert_matches    :: { *                                 } ,
+	log               :: { *                                 } ,
 };
 
 
