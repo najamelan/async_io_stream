@@ -1,0 +1,56 @@
+# Auto-generated from "Cargo.yml"
+[badges]
+[badges.maintenance]
+status = "actively-developed"
+
+[badges.travis-ci]
+repository = "najamelan/ws_stream_io"
+
+[dependencies]
+futures-core = "^0.3"
+futures-io = "^0.3"
+futures-sink = "^0.3"
+futures-task = "^0.3"
+log = "^0.4"
+
+[dependencies.pharos]
+optional = true
+version = "^0.4"
+
+[dependencies.tokio]
+optional = true
+version = "^0.2"
+
+[dev-dependencies]
+assert_matches = "^1"
+flexi_logger = "^0.15"
+futures = "^0.3"
+futures-test = "^0.3"
+pretty_assertions = "^0.6"
+
+[dev-dependencies.async-std]
+features = ["attributes"]
+version = "^1"
+
+[features]
+docs = []
+tokio_io = ["tokio"]
+
+[package]
+authors = ["Naja Melan <najamelan@autistici.org>"]
+categories = ["asynchronous", "network-programming"]
+description = "IntoAsyncRead on steriods"
+documentation = "https://docs.rs/ws_stream_io"
+edition = "2018"
+exclude = ["benches", "examples", "tests"]
+keywords = ["futures", "io", "async", "stream", "sink", "asyncread", "asyncwrite", "vectored_io"]
+license = "Unlicense"
+name = "ws_stream_io"
+readme = "README.md"
+repository = "https://github.com/najamelan/ws_stream_io"
+version = "0.1.0"
+
+[package.metadata]
+[package.metadata.docs]
+[package.metadata.docs.rs]
+all-features = true

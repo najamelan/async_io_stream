@@ -1,0 +1,73 @@
+package:
+
+  # When releasing to crates.io:
+  #
+  # - last check for all TODO, FIXME, expect, unwrap.
+  # - run clippy
+  # - Update CHANGELOG.md.
+  # - Update version numbers in Cargo.yml, Cargo.toml, install section of readme.
+  # - verify CI result
+  # - test dependent crates
+  # - cargo publish
+  # - merge dev branch into master
+  # - create git tag
+  #
+  version       : 0.1.0
+  name          : ws_stream_io
+  authors       : [ Naja Melan <najamelan@autistici.org> ]
+  description   : IntoAsyncRead on steriods
+  documentation : https://docs.rs/ws_stream_io
+  repository    : https://github.com/najamelan/ws_stream_io
+  readme        : README.md
+  keywords      : [ futures, io, async, stream, sink, asyncread, asyncwrite, vectored_io ]
+  categories    : [ asynchronous, network-programming ]
+  license       : Unlicense
+  edition       : "2018"
+  exclude       : [ benches, examples, tests ]
+
+  metadata:
+    docs:
+      rs:
+        all-features: true
+
+
+features:
+
+  docs: []
+
+  # Implement AsyncRead/AsyncWrite from tokio
+  #
+  tokio_io: [ tokio ]
+
+
+badges:
+
+  maintenance : { status     : actively-developed       }
+  travis-ci   : { repository : najamelan/ws_stream_io }
+
+
+dependencies:
+
+  # Public dependencies (bump major if changing any version number here)
+  # Means we use types from these crates in our public API.
+  #
+  futures-core : ^0.3 # Stream
+  futures-sink : ^0.3 # Sink
+  futures-io   : ^0.3 # AsyncRead/Write
+  futures-task : ^0.3 # noop_waker
+  log          : ^0.4
+  pharos       : { version: ^0.4, optional: true }
+  tokio        : { version: ^0.2, optional: true }
+
+
+  # Private dependencies
+  #
+
+dev-dependencies:
+
+  pretty_assertions: ^0.6
+  assert_matches   : ^1
+  async-std        : { version: ^1, features: [ attributes ] }
+  futures          : ^0.3
+  futures-test     : ^0.3
+  flexi_logger     : ^0.15
