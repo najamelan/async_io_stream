@@ -37,7 +37,11 @@ features:
 
   # Implement AsyncRead/AsyncWrite from tokio
   #
-  tokio_io: [ tokio ]
+  tokio_io  : [ tokio ]
+
+  # Implement Observable if the inner stream implements it and forward calls.
+  #
+  map_pharos: [ pharos ]
 
 
 badges:

@@ -34,6 +34,7 @@ version = "^1"
 
 [features]
 docs = []
+map_pharos = ["pharos"]
 tokio_io = ["tokio"]
 
 [package]

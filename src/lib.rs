@@ -44,7 +44,7 @@ use
 //
 use tokio::io::{ AsyncRead as TokAsyncRead, AsyncWrite as TokAsyncWrite };
 
-#[ cfg( feature = "pharos" ) ]
+#[ cfg( feature = "map_pharos" ) ]
 //
 use pharos::{ Observable, ObserveConfig, Events };
 
@@ -673,7 +673,7 @@ where
 
 
 
-#[ cfg( feature = "pharos" ) ]
+#[ cfg( feature = "map_pharos" ) ]
 //
 impl<St, I, Ev> Observable<Ev> for WsIo<St, I>
 where
