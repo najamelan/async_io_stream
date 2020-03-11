@@ -25,7 +25,7 @@ mod common;
 use
 {
 	common       :: { *               } ,
-	ws_stream_io :: { *               } ,
+	async_io_stream :: { *               } ,
 	// async_std    :: { *               } ,
 	futures      :: { *, task::noop_waker } ,
 	std          :: { task::{ Poll, Context }, pin::Pin, io::IoSliceMut } ,

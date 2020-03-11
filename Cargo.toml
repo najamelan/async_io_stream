@@ -41,14 +41,14 @@ tokio_io = ["tokio"]
 authors = ["Naja Melan <najamelan@autistici.org>"]
 categories = ["asynchronous", "network-programming"]
 description = "IntoAsyncRead on steriods"
-documentation = "https://docs.rs/ws_stream_io"
+documentation = "https://docs.rs/async_io_stream"
 edition = "2018"
 exclude = ["benches", "examples", "tests"]
 keywords = ["futures", "io", "async", "stream", "sink", "asyncread", "asyncwrite", "vectored_io"]
 license = "Unlicense"
-name = "ws_stream_io"
+name = "async_io_stream"
 readme = "README.md"
-repository = "https://github.com/najamelan/ws_stream_io"
+repository = "https://github.com/najamelan/async_io_stream"
 version = "0.1.0"
 
 [package.metadata]
