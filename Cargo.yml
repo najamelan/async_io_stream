@@ -29,11 +29,10 @@ package:
     docs:
       rs:
         all-features: true
+        rustdocflags: [ --cfg, docs ]
 
 
 features:
-
-  docs: []
 
   # Implement AsyncRead/AsyncWrite from tokio
   #

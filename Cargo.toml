@@ -33,7 +33,6 @@ features = ["attributes"]
 version = "^1"
 
 [features]
-docs = []
 map_pharos = ["pharos"]
 tokio_io = ["tokio"]
 
@@ -55,3 +54,4 @@ version = "0.1.0"
 [package.metadata.docs]
 [package.metadata.docs.rs]
 all-features = true
+rustdocflags = ["--cfg", "docs"]
