@@ -2,8 +2,8 @@
 
 use
 {
-	futures :: { *  } ,
-	log     :: { *  } ,
+	futures :: { * } ,
+	log     :: { * } ,
 	std     :: { io, task::{ Poll, Context }, pin::Pin, collections::VecDeque } ,
 };
 

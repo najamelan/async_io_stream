@@ -1,7 +1,7 @@
 // See: https://github.com/rust-lang/rust/issues/44732#issuecomment-488766871
 //
-#![cfg_attr( feature = "docs", feature(doc_cfg, external_doc) )]
-#![cfg_attr( feature = "docs", doc(include = "../README.md")  )]
+#![cfg_attr( all( not(doctest), doc ), feature(doc_cfg, external_doc) )]
+#![cfg_attr( all( not(doctest), doc ), doc(include = "../README.md")  )]
 #![doc = ""] // empty doc line to handle missing doc warning when the feature is missing.
 
 
@@ -31,12 +31,13 @@
 //
 use
 {
-	std          :: { fmt, io::{ self, Read, Cursor, IoSlice, IoSliceMut }, pin::Pin, task::{ Poll, Context }, borrow::{ Borrow, BorrowMut } } ,
-	futures_core :: { TryStream, ready                                  } ,
-	futures_sink :: { Sink                                              } ,
-	futures_task :: { noop_waker                                        } ,
-	log          :: { *                                                 } ,
-	futures_io   :: { AsyncRead, AsyncWrite                             } ,
+	std          :: { fmt, io::{ self, Read, Cursor, IoSlice, IoSliceMut }             } ,
+	std          :: { pin::Pin, task::{ Poll, Context }, borrow::{ Borrow, BorrowMut } } ,
+	futures_core :: { TryStream, ready                                                 } ,
+	futures_sink :: { Sink                                                             } ,
+	futures_task :: { noop_waker                                                       } ,
+	log          :: { *                                                                } ,
+	futures_io   :: { AsyncRead, AsyncWrite                                            } ,
 };
 
 

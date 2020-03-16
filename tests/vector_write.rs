@@ -14,13 +14,13 @@ mod common;
 
 use
 {
-	common            :: { *                                 } ,
-	async_io_stream      :: { *                                 } ,
-	futures           :: { *, task::noop_waker               } ,
+	common            :: { *                                              } ,
+	async_io_stream   :: { *                                              } ,
+	futures           :: { *, task::noop_waker                            } ,
 	std               :: { task::{ Poll, Context }, pin::Pin, io::IoSlice } ,
-	pretty_assertions :: { assert_eq                         } ,
-	assert_matches    :: { *                                 } ,
-	// log               :: { *                                 } ,
+	pretty_assertions :: { assert_eq                                      } ,
+	assert_matches    :: { *                                              } ,
+	// log            :: { *                                              } ,
 };
 
 

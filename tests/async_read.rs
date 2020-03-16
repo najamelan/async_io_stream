@@ -25,7 +25,7 @@ mod common;
 use
 {
 	common            :: { *                                 } ,
-	async_io_stream      :: { *                                 } ,
+	async_io_stream      :: { *                              } ,
 	futures           :: { *, task::noop_waker               } ,
 	std               :: { task::{ Poll, Context }, pin::Pin } ,
 	pretty_assertions :: { assert_eq                         } ,
