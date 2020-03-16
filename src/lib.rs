@@ -63,7 +63,7 @@ enum ReadState<B>
 
 /// A wrapper over a TryStream + Sink that implements AsyncRead/AsyncWrite.
 //
-pub struct WsIo<St, I>
+pub struct IoStream<St, I>
 where
 
 	St: Unpin,
@@ -73,20 +73,20 @@ where
 	write_err: Option<io::Error>    ,
 }
 
-impl<St, I> Unpin for WsIo<St, I>
+impl<St, I> Unpin for IoStream<St, I>
 where
 
 	St: Unpin,
 {}
 
 
-impl<St, I> WsIo<St, I>
+impl<St, I> IoStream<St, I>
 where
 
 	St: Unpin,
 
 {
-	/// Create a new WsIo.
+	/// Create a new IoStream.
 	//
 	pub fn new( inner: St ) -> Self
 	{
@@ -143,7 +143,7 @@ where
 		I: AsRef<[u8]>,
 
 	{
-		trace!( "WsIo: poll_read called" );
+		trace!( "IoStream: poll_read called" );
 
 		// since we might call the inner stream several times, keep track of whether we have data to
 		// return. If we do, we cannot return pending or error, but need to buffer the error for next
@@ -545,11 +545,11 @@ where
 
 
 
-impl<St: Unpin, I> fmt::Debug for WsIo<St, I>
+impl<St: Unpin, I> fmt::Debug for IoStream<St, I>
 {
 	fn fmt( &self, f: &mut fmt::Formatter<'_> ) -> fmt::Result
 	{
-		write!( f, "WsIo over Tungstenite" )
+		write!( f, "IoStream over Tungstenite" )
 	}
 }
 /// ### Errors
@@ -566,7 +566,7 @@ impl<St: Unpin, I> fmt::Debug for WsIo<St, I>
 /// - other std::io::Error's generally mean something went wrong on the underlying transport. Consider these fatal
 ///   and just drop the connection.
 //
-impl<St, I> AsyncWrite for WsIo<St, I>
+impl<St, I> AsyncWrite for IoStream<St, I>
 where
 
 	St: Sink< I, Error=io::Error > + Unpin,
@@ -606,7 +606,7 @@ where
 //
 #[ cfg_attr( feature = "docs", doc(cfg( feature = "tokio_io" )) ) ]
 //
-impl<St, I> TokAsyncWrite for WsIo<St, I>
+impl<St, I> TokAsyncWrite for IoStream<St, I>
 where
 
 	St: Sink< I, Error=io::Error > + Unpin,
@@ -634,7 +634,7 @@ where
 
 
 
-impl<St, I> AsyncRead  for WsIo<St, I>
+impl<St, I> AsyncRead  for IoStream<St, I>
 where
 
 	St: TryStream< Ok=I, Error=io::Error > + Unpin,
@@ -657,7 +657,7 @@ where
 //
 #[ cfg_attr( feature = "docs", doc(cfg( feature = "tokio_io" )) ) ]
 //
-impl<St, I> TokAsyncRead for WsIo<St, I>
+impl<St, I> TokAsyncRead for IoStream<St, I>
 where
 
 	St: TryStream< Ok=I, Error=io::Error > + Unpin,
@@ -675,7 +675,7 @@ where
 
 #[ cfg( feature = "map_pharos" ) ]
 //
-impl<St, I, Ev> Observable<Ev> for WsIo<St, I>
+impl<St, I, Ev> Observable<Ev> for IoStream<St, I>
 where
 
 	St: Sink< I, Error=io::Error > + TryStream< Ok=I, Error=io::Error > + Observable<Ev> + Unpin,
@@ -692,7 +692,7 @@ where
 
 
 
-impl<St, I> Borrow<St> for WsIo<St, I>
+impl<St, I> Borrow<St> for IoStream<St, I>
 where
 
 	St: Sink< I, Error=io::Error > + TryStream< Ok=I, Error=io::Error > + Unpin,
@@ -706,7 +706,7 @@ where
 
 
 
-impl<St, I> BorrowMut<St> for WsIo<St, I>
+impl<St, I> BorrowMut<St> for IoStream<St, I>
 where
 
 	St: Sink< I, Error=io::Error > + TryStream< Ok=I, Error=io::Error > + Unpin,

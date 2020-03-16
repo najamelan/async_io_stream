@@ -51,7 +51,7 @@ fn tester( actions: Vec<Action>, read_out: Output, expect: Vec<Vec<u8>>, polled:
 {
 	let stream = TestStream::new( actions.into() );
 
-	let mut wrapped = WsIo::new( stream );
+	let mut wrapped = IoStream::new( stream );
 	let     waker   = noop_waker();
 	let mut cx      = Context::from_waker( &waker );
 
@@ -197,7 +197,7 @@ fn tester( actions: Vec<Action>, read_out: Output, expect: Vec<Vec<u8>>, polled:
 {
 	// flexi_logger::Logger::with_str( "trace" ).start().expect( "flexi_logger");
 
-	// The pending will be consumed by WsIo for the first buffer, as that wasn't full
+	// The pending will be consumed by IoStream for the first buffer, as that wasn't full
 	// yet. Then we will poll again when poll_read is called again, so from outside
 	// we will never observe the pending.
 	//
@@ -214,7 +214,7 @@ fn tester( actions: Vec<Action>, read_out: Output, expect: Vec<Vec<u8>>, polled:
 {
 	// flexi_logger::Logger::with_str( "trace" ).start().expect( "flexi_logger");
 
-	// The error will be consumed by WsIo for the first buffer, as that wasn't full
+	// The error will be consumed by IoStream for the first buffer, as that wasn't full
 	// yet. The error should be returned the subsequent call.
 	//
 	let actions   = vec![ vec![ 1, 1 ].into(), Action::Error( io::ErrorKind::NotConnected ), vec![ 2, 2 ].into() ];

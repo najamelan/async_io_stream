@@ -26,10 +26,10 @@ use
 
 fn tester( ra: Vec<ReadyAction>, sa: Vec<SendAction>, fa: Vec<FlushAction>, mut data: Vec<Vec<u8>> )
 
-	-> ( WsIo<TestSink, Vec<u8>>, Poll<io::Result<usize>> )
+	-> ( IoStream<TestSink, Vec<u8>>, Poll<io::Result<usize>> )
 {
 	let     sink = TestSink::new( ra, sa, fa );
-	let mut wrap = WsIo::new( sink );
+	let mut wrap = IoStream::new( sink );
 
 	let mut bufs = Vec::new();
 

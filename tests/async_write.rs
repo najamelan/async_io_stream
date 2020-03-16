@@ -25,10 +25,10 @@ use
 
 fn tester( ra: Vec<ReadyAction>, sa: Vec<SendAction>, fa: Vec<FlushAction>, data: Vec<u8> )
 
-	-> ( WsIo<TestSink, Vec<u8>>, Poll<io::Result<usize>> )
+	-> ( IoStream<TestSink, Vec<u8>>, Poll<io::Result<usize>> )
 {
 	let     sink = TestSink::new( ra, sa, fa );
-	let mut wrap = WsIo::new( sink );
+	let mut wrap = IoStream::new( sink );
 
 	let waker  = noop_waker();
 	let mut cx = Context::from_waker( &waker );
