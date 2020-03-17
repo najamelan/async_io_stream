@@ -19,7 +19,7 @@ package:
   documentation : https://docs.rs/async_io_stream
   repository    : https://github.com/najamelan/async_io_stream
   readme        : README.md
-  keywords      : [ futures, io, async, stream, sink, asyncread, asyncwrite, vectored_io ]
+  keywords      : [ futures, io, async, asyncread, asyncwrite ]
   categories    : [ asynchronous, network-programming ]
   license       : Unlicense
   edition       : "2018"
