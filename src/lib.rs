@@ -31,13 +31,13 @@
 //
 use
 {
-	std          :: { fmt, io::{ self, Read, Cursor, IoSlice, IoSliceMut }             } ,
+	std          :: { fmt, io::{ self, Read, Cursor, IoSlice, IoSliceMut, BufRead }    } ,
 	std          :: { pin::Pin, task::{ Poll, Context }, borrow::{ Borrow, BorrowMut } } ,
 	futures_core :: { TryStream, ready                                                 } ,
 	futures_sink :: { Sink                                                             } ,
 	futures_task :: { noop_waker                                                       } ,
 	log          :: { *                                                                } ,
-	futures_io   :: { AsyncRead, AsyncWrite                                            } ,
+	futures_io   :: { AsyncRead, AsyncWrite, AsyncBufRead                              } ,
 };
 
 
@@ -58,11 +58,14 @@ enum ReadState<B>
 {
 	Ready{ chunk: Cursor<B> } ,
 	Error{ error: io::Error } ,
-	StreamEnded               ,
+	Eof                       ,
 }
 
 
-/// A wrapper over a TryStream + Sink that implements AsyncRead/AsyncWrite.
+/// A wrapper over a TryStream + Sink that implements [`AsyncRead`]/[`AsyncWrite`] and [`AsyncBufRead`].
+/// See the readme for more information.
+///
+/// Implements [`tokio::io::AsyncRead`] and [`tokio::io::AsyncWrite`] when the `tokio_io` feature is enabled.
 //
 pub struct IoStream<St, I>
 where
@@ -155,7 +158,7 @@ where
 
 		loop { match state
 		{
-			Some( ReadState::StreamEnded ) => return Poll::Ready(Ok(0)),
+			Some( ReadState::Eof ) => return Poll::Ready( Ok(0) ),
 
 			// A buffered error from the last call to poll_read.
 			//
@@ -165,10 +168,9 @@ where
 				return Poll::Ready( Err(error) )
 			}
 
-			Some( ReadState::Ready { ref mut chunk } ) =>
+			Some( ReadState::Ready{ ref mut chunk } ) =>
 			{
 				trace!( "poll_read: we have a chunk of size: {}, position: {}", chunk.get_ref().as_ref().len(), chunk.position() );
-
 
 				have_read += chunk.read( &mut buf[have_read..] ).expect( "no io errors on cursor" );
 
@@ -215,14 +217,12 @@ where
 							// TODO: is there a problem if we poll this stream again later? It's not
 							// a fused stream...
 							//
-							self.state = ReadState::StreamEnded.into();
+							self.state = ReadState::Eof.into();
 							return Ok(0).into();
 						}
 
 						Some( Err(err) ) =>
 						{
-							error!( "{}", err );
-
 							// We didn't put anything in the passed in buffer, so just
 							// return the error.
 							//
@@ -263,7 +263,7 @@ where
 							// TODO: is there a problem if we poll this stream again later? It's not
 							// a fused stream...
 							//
-							self.state = ReadState::StreamEnded.into();
+							self.state = ReadState::Eof.into();
 							return Ok(have_read).into();
 						}
 
@@ -716,6 +716,104 @@ where
 	fn borrow_mut( &mut self ) -> &mut St
 	{
 		&mut self.inner
+	}
+}
+
+
+
+
+impl<St, I> AsyncBufRead for IoStream<St, I>
+where
+
+	St: TryStream<Ok=I, Error = io::Error> + Unpin ,
+	I : AsRef<[u8]> + Unpin                        ,
+
+{
+	fn poll_fill_buf( mut self: Pin<&mut Self>, cx: &mut Context<'_> ) -> Poll< io::Result<&[u8]> >
+	{
+		if let None = self.state
+		{
+			match ready!( Pin::new( &mut self.inner ).try_poll_next(cx) )
+			{
+				Some( Ok(chunk) ) =>
+				{
+					if !chunk.as_ref().is_empty()
+					{
+						self.state = ReadState::Ready
+						{
+							chunk: Cursor::new( chunk ),
+						}.into();
+					}
+				}
+
+				Some( Err(error) ) =>
+				{
+					self.state = ReadState::Error{ error }.into();
+				}
+
+				None =>
+				{
+					self.state = ReadState::Eof.into();
+				}
+			}
+		}
+
+
+		match self.state.take()
+		{
+			Some( ReadState::Error{ error } ) =>
+			{
+				self.state = None;
+				Poll::Ready( Err(error) )
+			}
+
+			Some( ReadState::Eof ) =>
+			{
+				Poll::Ready( Ok(&[]) )
+			}
+
+			Some(x) =>
+			{
+				// Put it back, because we will return a reference to the buffer.
+				//
+				self.state = Some(x);
+
+				if let Some( ReadState::Ready{ ref mut chunk } ) = self.get_mut().state
+				{
+					return Poll::Ready( chunk.fill_buf() );
+				}
+
+				unreachable!();
+			}
+
+			None => unreachable!(),
+		}
+	}
+
+
+
+	fn consume( mut self: Pin<&mut Self>, amount: usize )
+	{
+		if amount == 0 { return }
+
+		if let Some( ReadState::Ready{ chunk } ) = &mut self.state
+		{
+			chunk.consume( amount );
+
+			// if we are at the end, remove the chunk
+			//
+			match chunk.get_ref().as_ref().len() as u64
+			{
+				x if x == chunk.position() => self.state = None,
+				x if x  < chunk.position() => debug_assert!( false, "Attempted to consume more than available bytes" ),
+				_                          => {}
+			}
+		}
+
+		else
+		{
+			debug_assert!( false, "Attempted to consume from IntoAsyncRead without chunk" );
+		}
 	}
 }
 

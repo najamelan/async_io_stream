@@ -1,6 +1,6 @@
 // Test the behavior of AsyncRead::poll_read:
 //
-// - pass empty buffer
+// ✔ pass empty buffer
 //
 // - pass buffer exactly one message
 //
@@ -25,7 +25,7 @@ mod common;
 use
 {
 	common            :: { *                                 } ,
-	async_io_stream      :: { *                              } ,
+	async_io_stream   :: { *                                 } ,
 	futures           :: { *, task::noop_waker               } ,
 	std               :: { task::{ Poll, Context }, pin::Pin } ,
 	pretty_assertions :: { assert_eq                         } ,
@@ -221,7 +221,6 @@ fn tester( actions: Vec<Action>, read_out: Vec<Output>, expect: Vec<Vec<u8>>, po
 {
 	// flexi_logger::Logger::with_str( "trace" ).start().expect( "flexi_logger");
 
-
 	let actions   = vec![ Action::Error( io::ErrorKind::NotConnected ), vec![ 1, 1 ].into() ];
 	let expect    = vec![ vec![ 0, 0, 0]                              , vec![ 1, 1 ]        ];
 	let read_out  = vec![ Output::Error( io::ErrorKind::NotConnected ), Output::Read(2)     ];
@@ -235,7 +234,6 @@ fn tester( actions: Vec<Action>, read_out: Vec<Output>, expect: Vec<Vec<u8>>, po
 #[ test ] fn pending()
 {
 	// flexi_logger::Logger::with_str( "trace" ).start().expect( "flexi_logger");
-
 
 	let actions   = vec![ Action::Pending, vec![ 2, 2 ].into() ];
 	let expect    = vec![ vec![ 0, 0, 0] , vec![ 2, 2 ]        ];

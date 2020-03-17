@@ -1,6 +1,5 @@
 # TODO
 
+- tracing and debug statements
 - test tokio
-- docs and examples
-- polish
 - publish

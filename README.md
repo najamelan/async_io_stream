@@ -19,6 +19,11 @@ into account the first buffer.
 
 For the `Sink` all data passed in is made into one item of the `Sink`.
 
+[`AsyncBufRead`](https://docs.rs/futures/0.3.4/futures/io/trait.AsyncBufRead.html) is also implemented, which can be used to
+avoid a copy of the data when reading.
+
+Care is taken when polling the underlying `Stream` several times, to send a dummy waker so the underlying `Stream` doesn't try to wake up the task when we didn't return `Poll::Pending`. This is, if we already have data to return, we can't return `Poll::Pending`. If the underlying `Stream` returns an error, we will buffer it for the next poll.
+
 
 ## Table of Contents
 
