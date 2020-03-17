@@ -61,9 +61,9 @@ fn tester( actions: Vec<Action>, read_out: Vec<Output>, expect: Vec<Vec<u8>>, po
 
 		match Pin::new( &mut wrapped ).poll_read( &mut cx, &mut buf )
 		{
-			Poll::Ready(Ok (read)) => assert_matches!( read_out[i], Output::Read ( n   ) => assert_eq!( n       , read ) ),
-			Poll::Ready(Err(e   )) => assert_matches!( read_out[i], Output::Error( err ) => assert_eq!( e.kind(), err  ) ),
-			Poll::Pending          => assert_eq!     ( read_out[i], Output::Pending                                      ),
+			Poll::Ready(Ok (read)) => assert_matches!( read_out[i], Output::Read ( n   ) => assert_eq!( read    , n   ) ),
+			Poll::Ready(Err(e   )) => assert_matches!( read_out[i], Output::Error( err ) => assert_eq!( e.kind(), err ) ),
+			Poll::Pending          => assert_eq!     ( read_out[i], Output::Pending                                     ),
 		}
 
 		assert_eq!( &buf , out );

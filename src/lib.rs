@@ -36,7 +36,6 @@ use
 	futures_core :: { TryStream, ready                                                 } ,
 	futures_sink :: { Sink                                                             } ,
 	futures_task :: { noop_waker                                                       } ,
-	log          :: { *                                                                } ,
 	futures_io   :: { AsyncRead, AsyncWrite, AsyncBufRead                              } ,
 };
 
@@ -103,7 +102,7 @@ where
 	}
 
 
-	/// Get a reference to the inner stream
+	/// Get a reference to the inner stream.
 	//
 	pub fn inner( &self ) -> &St
 	{
@@ -111,7 +110,7 @@ where
 	}
 
 
-	/// Get a mut reference to the inner stream
+	/// Get a mut reference to the inner stream.
 	//
 	pub fn inner_mut( &mut self ) -> &mut St
 	{
@@ -122,8 +121,8 @@ where
 
 	// The requirements:
 	// - fill as much of the passed in buffer as we can.
-	// - the item coming out of the stream might be bigger than the buffer, so then we need to buffer it
-	//   internally and keep track of how many bytes are left for next time.
+	// - the item coming out of the stream might be bigger than the read buffer, so then we need
+	//   to buffer it internally and keep track of how many bytes are left for next time.
 	// - the item might be smaller than the buffer, but then we need to get the next item
 	//   out of the stream. So the stream might return:
 	//   - the next item,  hurray
@@ -147,8 +146,6 @@ where
 		I: AsRef<[u8]>,
 
 	{
-		trace!( "IoStream: poll_read called" );
-
 		// since we might call the inner stream several times, keep track of whether we have data to
 		// return. If we do, we cannot return pending or error, but need to buffer the error for next
 		// call.
@@ -170,10 +167,7 @@ where
 
 			Some( ReadState::Ready{ ref mut chunk } ) =>
 			{
-				trace!( "poll_read: we have a chunk of size: {}, position: {}", chunk.get_ref().as_ref().len(), chunk.position() );
-
 				have_read += chunk.read( &mut buf[have_read..] ).expect( "no io errors on cursor" );
-
 
 				// We read the entire chunk
 				//
@@ -187,8 +181,6 @@ where
 				//
 				if have_read == buf.len()
 				{
-					trace!( "poll_read: return read {}", have_read );
-
 					self.state = state;
 					return Poll::Ready( Ok(have_read) );
 				}
@@ -212,11 +204,6 @@ where
 						//
 						None =>
 						{
-							trace!( "poll_read: stream has ended" );
-
-							// TODO: is there a problem if we poll this stream again later? It's not
-							// a fused stream...
-							//
 							self.state = ReadState::Eof.into();
 							return Ok(0).into();
 						}
@@ -256,12 +243,7 @@ where
 						//
 						Poll::Ready( None ) =>
 						{
-							trace!( "poll_read: stream has ended" );
-
 							// return whatever we had already read.
-							//
-							// TODO: is there a problem if we poll this stream again later? It's not
-							// a fused stream...
 							//
 							self.state = ReadState::Eof.into();
 							return Ok(have_read).into();
@@ -269,8 +251,6 @@ where
 
 						Poll::Ready(Some( Err(err) )) =>
 						{
-							error!( "{}", err );
-
 							self.state = ReadState::Error{ error: err }.into();
 							return Ok(have_read).into();
 						}
@@ -376,8 +356,6 @@ where
 		I: From< Vec<u8> >,
 
 	{
-		trace!( "{:?}: AsyncWrite - poll_write", self );
-
 		if let Some( e ) = self.write_err.take()
 		{
 			return Poll::Ready( Err(e) );
@@ -389,8 +367,6 @@ where
 
 		if let Err( e ) = res
 		{
-			trace!( "{:?}: AsyncWrite - poll_write SINK ERROR", self );
-
 			return Poll::Ready( Err(e) );
 		}
 
@@ -427,8 +403,6 @@ where
 				}
 
 
-				trace!( "{:?}: AsyncWrite - poll_write, wrote {} bytes", self, buf.len() );
-
 				Poll::Ready(Ok( buf.len() ))
 			}
 
@@ -444,8 +418,6 @@ where
 		I: From< Vec<u8> >,
 
 	{
-		trace!( "{:?}: AsyncWrite - poll_write", self );
-
 		if let Some( e ) = self.write_err.take()
 		{
 			return Poll::Ready( Err(e) );
@@ -458,8 +430,6 @@ where
 
 		if let Err( e ) = res
 		{
-			trace!( "{:?}: AsyncWrite - poll_write SINK not READY", self );
-
 			return Poll::Ready( Err(e) )
 		}
 
@@ -507,8 +477,6 @@ where
 					Poll::Ready( Err(e)) => self.write_err = e.into(),
 				}
 
-				trace!( "{:?}: AsyncWrite - poll_write, wrote {} bytes", self, wrote );
-
 				Poll::Ready(Ok( wrote ))
 			}
 
@@ -523,8 +491,6 @@ where
 
 		St: Sink< I, Error=io::Error >
 	{
-		trace!( "{:?}: AsyncWrite - poll_flush", self );
-
 		match ready!( Pin::new( &mut self.inner ).poll_flush(cx) )
 		{
 			Ok (_) => Poll::Ready(Ok ( () )) ,
@@ -538,8 +504,6 @@ where
 
 		St: Sink< I, Error=io::Error >
 	{
-		trace!( "{:?}: AsyncWrite - poll_close", self );
-
 		ready!( Pin::new( &mut self.inner ).poll_close( cx ) ).into()
 	}
 }
@@ -731,7 +695,7 @@ where
 {
 	fn poll_fill_buf( mut self: Pin<&mut Self>, cx: &mut Context<'_> ) -> Poll< io::Result<&[u8]> >
 	{
-		if let None = self.state
+		if self.state.is_none()
 		{
 			match ready!( Pin::new( &mut self.inner ).try_poll_next(cx) )
 			{

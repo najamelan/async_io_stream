@@ -55,10 +55,9 @@ dependencies:
   # Means we use types from these crates in our public API.
   #
   futures-core : ^0.3 # Stream
-  futures-sink : ^0.3 # Sink
   futures-io   : ^0.3 # AsyncRead/Write
+  futures-sink : ^0.3 # Sink
   futures-task : ^0.3 # noop_waker
-  log          : ^0.4
   pharos       : { version: ^0.4, optional: true }
   tokio        : { version: ^0.2, optional: true }
 
@@ -68,9 +67,10 @@ dependencies:
 
 dev-dependencies:
 
-  pretty_assertions: ^0.6
   assert_matches   : ^1
   async-std        : { version: ^1, features: [ attributes ] }
+  flexi_logger     : ^0.15
   futures          : ^0.3
   futures-test     : ^0.3
-  flexi_logger     : ^0.15
+  log              : ^0.4
+  pretty_assertions: ^0.6
