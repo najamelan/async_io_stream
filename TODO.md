@@ -1,4 +1,4 @@
 # TODO
 
 - test tokio
-- publish
+- test map_pharos
