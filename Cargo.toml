@@ -6,6 +6,9 @@ status = "actively-developed"
 [badges.travis-ci]
 repository = "najamelan/ws_stream_io"
 
+[build-dependencies]
+rustc_version = "^0.2"
+
 [dependencies]
 futures-core = "^0.3"
 futures-io = "^0.3"
@@ -54,4 +57,3 @@ version = "0.1.0"
 [package.metadata.docs]
 [package.metadata.docs.rs]
 all-features = true
-rustdocflags = ["--cfg", "docs"]

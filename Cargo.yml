@@ -29,7 +29,6 @@ package:
     docs:
       rs:
         all-features: true
-        rustdocflags: [ --cfg, docs ]
 
 
 features:
@@ -74,3 +73,8 @@ dev-dependencies:
   futures-test     : ^0.3
   log              : ^0.4
   pretty_assertions: ^0.6
+
+
+build-dependencies:
+
+  rustc_version: ^0.2

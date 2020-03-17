@@ -8,5 +8,7 @@ set -e
 #
 set -x
 
+# only works on nightly because of features like doc_cfg and external_doc
+#
 cargo doc --all-features
 cargo test --doc
