@@ -29,6 +29,7 @@ package:
     docs:
       rs:
         all-features: true
+        targets     : []
 
 
 features:
