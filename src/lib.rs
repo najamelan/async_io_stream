@@ -630,9 +630,12 @@ where
 	I: AsRef<[u8]>
 
 {
-	fn poll_read( self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut [u8] ) -> Poll< io::Result<usize> >
+	fn poll_read( self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut tokio::io::ReadBuf<'_> ) -> Poll< io::Result<()> >
 	{
-		self.poll_read_impl( cx, buf )
+		let read_count = ready!( self.poll_read_impl( cx, buf.initialize_unfilled() ) )?;
+		buf.advance( read_count );
+
+		Poll::Ready( Ok(()) )
 	}
 }
 

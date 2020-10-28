@@ -21,7 +21,7 @@ version = "^0.4"
 
 [dependencies.tokio]
 optional = true
-version = "^0.2"
+version = "^0.3"
 
 [dev-dependencies]
 assert_matches = "^1"
@@ -51,7 +51,7 @@ license = "Unlicense"
 name = "async_io_stream"
 readme = "README.md"
 repository = "https://github.com/najamelan/async_io_stream"
-version = "0.1.0"
+version = "0.2.0"
 
 [package.metadata]
 [package.metadata.docs]

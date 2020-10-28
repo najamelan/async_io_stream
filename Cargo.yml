@@ -24,7 +24,7 @@ package:
   # - `git tag x.x.x` with version number.
   # - `git push && git push --tags`
   #
-  version       : 0.1.0
+  version       : 0.2.0
   name          : async_io_stream
   authors       : [ Naja Melan <najamelan@autistici.org> ]
   description   : IntoAsyncRead on steriods
@@ -71,7 +71,7 @@ dependencies:
   futures-sink : ^0.3 # Sink
   futures-task : ^0.3 # noop_waker
   pharos       : { version: ^0.4, optional: true }
-  tokio        : { version: ^0.2, optional: true }
+  tokio        : { version: ^0.3, optional: true }
 
 
   # Private dependencies
