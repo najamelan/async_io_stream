@@ -35,7 +35,7 @@ use
 
 
 
-#[ derive( Debug, PartialEq, Eq ) ]
+#[ derive( Debug, PartialEq, Eq, Clone, Copy ) ]
 //
 enum Output
 {
@@ -46,6 +46,16 @@ enum Output
 
 
 fn tester( actions: Vec<Action>, read_out: Vec<Output>, expect: Vec<Vec<u8>>, polled: usize )
+{
+	tester_futures( actions.clone(), read_out.clone(), expect.clone(), polled );
+
+	#[ cfg( feature = "tokio_io" ) ]
+	//
+	tester_tokio( actions, read_out, expect, polled );
+}
+
+
+fn tester_futures( actions: Vec<Action>, read_out: Vec<Output>, expect: Vec<Vec<u8>>, polled: usize )
 {
 	let stream = TestStream::new( actions.into() );
 
@@ -67,6 +77,37 @@ fn tester( actions: Vec<Action>, read_out: Vec<Output>, expect: Vec<Vec<u8>>, po
 		}
 
 		assert_eq!( &buf , out );
+	}
+
+	assert_eq!( wrapped.inner().polled(), polled );
+}
+
+
+
+fn tester_tokio( actions: Vec<Action>, read_out: Vec<Output>, expect: Vec<Vec<u8>>, polled: usize )
+{
+	let stream = TestStream::new( actions.into() );
+
+	let mut wrapped = IoStream::new( stream );
+	let     waker   = noop_waker();
+	let mut cx      = Context::from_waker( &waker );
+
+	for (i, out) in expect.iter().enumerate()
+	{
+		let mut buf = vec![ 0u8; out.len() ];
+		let mut readbuf = tokio::io::ReadBuf::new( &mut buf );
+
+		let result = tokio::io::AsyncRead::poll_read( Pin::new( &mut wrapped ), &mut cx, &mut readbuf );
+
+		match result
+		{
+			Poll::Ready( Ok(()) )  => assert_matches!( read_out[i], Output::Read ( n   ) => assert_eq!( readbuf.filled().len(), n   ) ),
+			Poll::Ready(Err(e   )) => assert_matches!( read_out[i], Output::Error( err ) => assert_eq!( e.kind()              , err ) ),
+			Poll::Pending          => assert_eq!     ( read_out[i], Output::Pending                                                   ),
+		}
+
+
+		assert_eq!( &readbuf.initialized() , out );
 	}
 
 	assert_eq!( wrapped.inner().polled(), polled );

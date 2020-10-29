@@ -39,6 +39,24 @@ fn tester( ra: Vec<ReadyAction>, sa: Vec<SendAction>, fa: Vec<FlushAction>, data
 }
 
 
+#[ cfg( feature = "tokio_io" ) ]
+//
+fn tester_tokio( ra: Vec<ReadyAction>, sa: Vec<SendAction>, fa: Vec<FlushAction>, data: Vec<u8> )
+
+	-> ( IoStream<TestSink, Vec<u8>>, Poll<io::Result<usize>> )
+{
+	let     sink = TestSink::new( ra, sa, fa );
+	let mut wrap = IoStream::new( sink );
+
+	let waker  = noop_waker();
+	let mut cx = Context::from_waker( &waker );
+
+	let out = tokio::io::AsyncWrite::poll_write( Pin::new( &mut wrap ), &mut cx, &data );
+
+	(wrap, out)
+}
+
+
 // Return pending from poll_ready.
 //
 #[ test ] fn poll_ready_pending()
@@ -62,6 +80,31 @@ fn tester( ra: Vec<ReadyAction>, sa: Vec<SendAction>, fa: Vec<FlushAction>, data
 }
 
 
+// Return pending from poll_ready.
+//
+#[ cfg( feature = "tokio_io" ) ]
+//
+#[ test ] fn poll_ready_pending_tokio()
+{
+	// flexi_logger::Logger::with_str( "trace" ).start().expect( "flexi_logger");
+
+	let ra = vec![ ReadyAction::Pending ];
+	let sa = vec![ SendAction::Ok       ];
+	let fa = vec![ FlushAction::Ok      ];
+
+	let data = vec![ 1, 1 ];
+
+	let (wrap, out) = tester_tokio( ra, sa, fa, data );
+
+	assert_matches!( out, Poll::Pending );
+
+	assert_eq!( wrap.inner().poll_ready , 1 );
+	assert_eq!( wrap.inner().start_send , 0 );
+	assert_eq!( wrap.inner().poll_flush , 0 );
+	assert_eq!( wrap.inner().items.len(), 0 );
+}
+
+
 // Return errors from poll_ready.
 //
 #[ test ] fn poll_ready_error()
@@ -75,6 +118,31 @@ fn tester( ra: Vec<ReadyAction>, sa: Vec<SendAction>, fa: Vec<FlushAction>, data
 	let data = vec![ 1, 1 ];
 
 	let (wrap, out) = tester( ra, sa, fa, data );
+
+	assert_matches!( out, Poll::Ready( Err(e) ) => assert_eq!( e.kind(), io::ErrorKind::NotConnected ) );
+
+	assert_eq!( wrap.inner().poll_ready , 1 );
+	assert_eq!( wrap.inner().start_send , 0 );
+	assert_eq!( wrap.inner().poll_flush , 0 );
+	assert_eq!( wrap.inner().items.len(), 0 );
+}
+
+
+// Return errors from poll_ready.
+//
+#[ cfg( feature = "tokio_io" ) ]
+//
+#[ test ] fn poll_ready_error_tokio()
+{
+	// flexi_logger::Logger::with_str( "trace" ).start().expect( "flexi_logger");
+
+	let ra = vec![ ReadyAction::Error( io::ErrorKind::NotConnected ) ];
+	let sa = vec![ SendAction::Ok                                    ];
+	let fa = vec![ FlushAction::Ok                                   ];
+
+	let data = vec![ 1, 1 ];
+
+	let (wrap, out) = tester_tokio( ra, sa, fa, data );
 
 	assert_matches!( out, Poll::Ready( Err(e) ) => assert_eq!( e.kind(), io::ErrorKind::NotConnected ) );
 
@@ -109,6 +177,32 @@ fn tester( ra: Vec<ReadyAction>, sa: Vec<SendAction>, fa: Vec<FlushAction>, data
 }
 
 
+// Normal use case, 2 buffers to one write.
+//
+#[ cfg( feature = "tokio_io" ) ]
+//
+#[ test ] fn normal_use_tokio()
+{
+	// flexi_logger::Logger::with_str( "trace" ).start().expect( "flexi_logger");
+
+	let ra = vec![ ReadyAction::Ok ];
+	let sa = vec![ SendAction::Ok  ];
+	let fa = vec![ FlushAction::Ok ];
+
+	let data = vec![ 1, 1 ];
+
+	let (wrap, out) = tester_tokio( ra, sa, fa, data );
+
+	assert_matches!( out, Poll::Ready( Ok(n) ) => assert_eq!( n, 2 ) );
+
+	assert_eq!( wrap.inner().poll_ready , 1            );
+	assert_eq!( wrap.inner().start_send , 1            );
+	assert_eq!( wrap.inner().poll_flush , 1            );
+	assert_eq!( wrap.inner().items.len(), 1            );
+	assert_eq!( wrap.inner().items[0]   , vec![ 1, 1 ] );
+}
+
+
 // Return errors from start_send.
 //
 #[ test ] fn send_error()
@@ -122,6 +216,32 @@ fn tester( ra: Vec<ReadyAction>, sa: Vec<SendAction>, fa: Vec<FlushAction>, data
 	let data = vec![ 1, 1 ];
 
 	let (wrap, out) = tester( ra, sa, fa, data );
+
+	assert_matches!( out, Poll::Ready( Err(e) ) => assert_eq!( e.kind(), io::ErrorKind::NotConnected ) );
+
+	assert_eq!( wrap.inner().poll_ready , 1 );
+	assert_eq!( wrap.inner().start_send , 1 );
+	assert_eq!( wrap.inner().poll_flush , 0 );
+	assert_eq!( wrap.inner().items.len(), 0 );
+}
+
+
+
+// Return errors from start_send.
+//
+#[ cfg( feature = "tokio_io" ) ]
+//
+#[ test ] fn send_error_tokio()
+{
+	// flexi_logger::Logger::with_str( "trace" ).start().expect( "flexi_logger");
+
+	let ra = vec![ ReadyAction::Ok                                  ];
+	let sa = vec![ SendAction::Error( io::ErrorKind::NotConnected ) ];
+	let fa = vec![ FlushAction::Ok                                  ];
+
+	let data = vec![ 1, 1 ];
+
+	let (wrap, out) = tester_tokio( ra, sa, fa, data );
 
 	assert_matches!( out, Poll::Ready( Err(e) ) => assert_eq!( e.kind(), io::ErrorKind::NotConnected ) );
 
@@ -163,6 +283,39 @@ fn tester( ra: Vec<ReadyAction>, sa: Vec<SendAction>, fa: Vec<FlushAction>, data
 }
 
 
+// Return errors from flush on next poll_write.
+//
+#[ cfg( feature = "tokio_io" ) ]
+//
+#[ test ] fn flush_error_return_from_poll_write_tokio()
+{
+	// flexi_logger::Logger::with_str( "trace" ).start().expect( "flexi_logger");
+
+	let ra = vec![ ReadyAction::Ok                                   ];
+	let sa = vec![ SendAction::Ok                                    ];
+	let fa = vec![ FlushAction::Error( io::ErrorKind::NotConnected ) ];
+
+	let data = vec![ 1, 1 ];
+
+	let (mut wrap, out) = tester_tokio( ra, sa, fa, data );
+
+	assert_matches!( out, Poll::Ready( Ok(n) ) => assert_eq!( n, 2 ) );
+
+	assert_eq!( wrap.inner().poll_ready , 1            );
+	assert_eq!( wrap.inner().start_send , 1            );
+	assert_eq!( wrap.inner().poll_flush , 1            );
+	assert_eq!( wrap.inner().items.len(), 1            );
+	assert_eq!( wrap.inner().items[0]   , vec![ 1, 1 ] );
+
+	let waker  = noop_waker();
+	let mut cx = Context::from_waker( &waker );
+
+	let out = Pin::new( &mut wrap ).poll_write( &mut cx, &vec![ 1 ] );
+
+	assert_matches!( out, Poll::Ready( Err(e) ) => assert_eq!( e.kind(), io::ErrorKind::NotConnected ) );
+}
+
+
 // Return errors from flush on next poll_write_vectored.
 //
 #[ test ] fn flush_error_return_from_poll_write_vectored()
@@ -176,6 +329,39 @@ fn tester( ra: Vec<ReadyAction>, sa: Vec<SendAction>, fa: Vec<FlushAction>, data
 	let data = vec![ 1, 1 ];
 
 	let (mut wrap, out) = tester( ra, sa, fa, data );
+
+	assert_matches!( out, Poll::Ready( Ok(n) ) => assert_eq!( n, 2 ) );
+
+	assert_eq!( wrap.inner().poll_ready , 1            );
+	assert_eq!( wrap.inner().start_send , 1            );
+	assert_eq!( wrap.inner().poll_flush , 1            );
+	assert_eq!( wrap.inner().items.len(), 1            );
+	assert_eq!( wrap.inner().items[0]   , vec![ 1, 1 ] );
+
+	let waker  = noop_waker();
+	let mut cx = Context::from_waker( &waker );
+
+	let out = Pin::new( &mut wrap ).poll_write_vectored( &mut cx, &vec![ IoSlice::new( &[] ) ] );
+
+	assert_matches!( out, Poll::Ready( Err(e) ) => assert_eq!( e.kind(), io::ErrorKind::NotConnected ) );
+}
+
+
+// Return errors from flush on next poll_write_vectored.
+//
+#[ cfg( feature = "tokio_io" ) ]
+//
+#[ test ] fn flush_error_return_from_poll_write_vectored_tokio()
+{
+	// flexi_logger::Logger::with_str( "trace" ).start().expect( "flexi_logger");
+
+	let ra = vec![ ReadyAction::Ok                                   ];
+	let sa = vec![ SendAction::Ok                                    ];
+	let fa = vec![ FlushAction::Error( io::ErrorKind::NotConnected ) ];
+
+	let data = vec![ 1, 1 ];
+
+	let (mut wrap, out) = tester_tokio( ra, sa, fa, data );
 
 	assert_matches!( out, Poll::Ready( Ok(n) ) => assert_eq!( n, 2 ) );
 

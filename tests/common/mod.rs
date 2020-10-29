@@ -8,7 +8,7 @@ use
 };
 
 
-#[ derive( Debug, PartialEq, Eq ) ]
+#[ derive( Debug, PartialEq, Eq, Clone ) ]
 //
 pub enum Action
 {
@@ -95,7 +95,7 @@ impl Stream for TestStream
 
 
 
-#[ derive( Debug, PartialEq, Eq ) ]
+#[ derive( Debug, PartialEq, Eq, Clone, Copy ) ]
 //
 pub enum ReadyAction
 {
@@ -104,7 +104,7 @@ pub enum ReadyAction
 	Error( io::ErrorKind ) ,
 }
 
-#[ derive( Debug, PartialEq, Eq ) ]
+#[ derive( Debug, PartialEq, Eq, Clone, Copy ) ]
 //
 pub enum SendAction
 {
@@ -112,7 +112,7 @@ pub enum SendAction
 	Error( io::ErrorKind ) ,
 }
 
-#[ derive( Debug, PartialEq, Eq ) ]
+#[ derive( Debug, PartialEq, Eq, Clone, Copy ) ]
 //
 pub enum FlushAction
 {

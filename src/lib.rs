@@ -568,8 +568,6 @@ where
 //
 #[ cfg_attr( nightly, doc(cfg( feature = "tokio_io" )) ) ]
 //
-/// This impl requires the `tokio_io` feature.
-//
 impl<St, I> TokAsyncWrite for IoStream<St, I>
 where
 
