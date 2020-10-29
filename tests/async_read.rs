@@ -83,7 +83,8 @@ fn tester_futures( actions: Vec<Action>, read_out: Vec<Output>, expect: Vec<Vec<
 }
 
 
-
+#[ cfg( feature = "tokio_io" ) ]
+//
 fn tester_tokio( actions: Vec<Action>, read_out: Vec<Output>, expect: Vec<Vec<u8>>, polled: usize )
 {
 	let stream = TestStream::new( actions.into() );
