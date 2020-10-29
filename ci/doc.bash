@@ -8,5 +8,7 @@ set -e
 #
 set -x
 
-cargo doc --all-features
+# only works on nightly because of features like doc_cfg and external_doc
+#
+cargo doc --all-features --no-deps
 cargo test --doc

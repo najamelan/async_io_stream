@@ -1,9 +1,6 @@
-// See: https://github.com/rust-lang/rust/issues/44732#issuecomment-488766871
-//
-#![cfg_attr( all( not(doctest), doc ), feature(doc_cfg, external_doc) )]
-#![cfg_attr( all( not(doctest), doc ), doc(include = "../README.md")  )]
-#![doc = ""] // empty doc line to handle missing doc warning when the feature is missing.
-
+#![cfg_attr( nightly, feature(doc_cfg, external_doc) )]
+#![cfg_attr( nightly, doc(include = "../README.md")  )]
+#![doc = ""] // empty doc line to handle missing doc warning on stable.
 
 #![ doc    ( html_root_url = "https://docs.rs/ws_stream_io" ) ]
 #![ deny   ( missing_docs                                   ) ]
@@ -569,7 +566,7 @@ where
 
 #[ cfg( feature = "tokio_io" ) ]
 //
-#[ cfg_attr( feature = "docs", doc(cfg( feature = "tokio_io" )) ) ]
+#[ cfg_attr( nightly, doc(cfg( feature = "tokio_io" )) ) ]
 //
 impl<St, I> TokAsyncWrite for IoStream<St, I>
 where
@@ -620,7 +617,9 @@ where
 
 #[ cfg( feature = "tokio_io" ) ]
 //
-#[ cfg_attr( feature = "docs", doc(cfg( feature = "tokio_io" )) ) ]
+#[ cfg_attr( nightly, doc(cfg( feature = "tokio_io" )) ) ]
+//
+/// This impl requires the `tokio_io` feature.
 //
 impl<St, I> TokAsyncRead for IoStream<St, I>
 where
@@ -629,9 +628,12 @@ where
 	I: AsRef<[u8]>
 
 {
-	fn poll_read( self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut [u8] ) -> Poll< io::Result<usize> >
+	fn poll_read( self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &mut tokio::io::ReadBuf<'_> ) -> Poll< io::Result<()> >
 	{
-		self.poll_read_impl( cx, buf )
+		let read_count = ready!( self.poll_read_impl( cx, buf.initialize_unfilled() ) )?;
+		buf.advance( read_count );
+
+		Poll::Ready( Ok(()) )
 	}
 }
 
@@ -639,6 +641,10 @@ where
 
 
 #[ cfg( feature = "map_pharos" ) ]
+//
+#[ cfg_attr( nightly, doc(cfg( feature = "map_pharos" )) ) ]
+//
+/// This impl requires the `map_pharos` feature.
 //
 impl<St, I, Ev> Observable<Ev> for IoStream<St, I>
 where

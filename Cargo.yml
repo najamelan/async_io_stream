@@ -3,16 +3,28 @@ package:
   # When releasing to crates.io:
   #
   # - last check for all TODO, FIXME, expect, unwrap.
-  # - run clippy
+  # - recheck log statements (informative, none left that were just for development, ...)
+  # - `cargo +nightly doc` and re-read and final polish of documentation.
+  #
   # - Update CHANGELOG.md.
   # - Update version numbers in Cargo.yml, Cargo.toml, install section of readme.
-  # - verify CI result
-  # - test dependent crates
-  # - cargo publish
-  # - merge dev branch into master
-  # - create git tag
   #
-  version       : 0.1.0
+  # - `touch **.rs && cargo clippy --tests --examples --benches --all-features`
+  # - `cargo update`
+  # - `cargo udeps --all-targets --all-features`
+  # - `cargo audit`
+  # - `cargo crev crate verify --show-all --recursive` and review.
+  # - 'cargo test --all-targets --all-features'
+  #
+  # - push dev and verify CI result
+  # - `cargo test` on dependent crates
+  #
+  # - cargo publish
+  # - `git checkout master && git merge dev --no-ff`
+  # - `git tag x.x.x` with version number.
+  # - `git push && git push --tags`
+  #
+  version       : 0.2.0-beta.1
   name          : async_io_stream
   authors       : [ Naja Melan <najamelan@autistici.org> ]
   description   : IntoAsyncRead on steriods
@@ -29,7 +41,7 @@ package:
     docs:
       rs:
         all-features: true
-        rustdocflags: [ --cfg, docs ]
+        targets     : []
 
 
 features:
@@ -59,7 +71,7 @@ dependencies:
   futures-sink : ^0.3 # Sink
   futures-task : ^0.3 # noop_waker
   pharos       : { version: ^0.4, optional: true }
-  tokio        : { version: ^0.2, optional: true }
+  tokio        : { version: ^0.3, optional: true }
 
 
   # Private dependencies
@@ -74,3 +86,8 @@ dev-dependencies:
   futures-test     : ^0.3
   log              : ^0.4
   pretty_assertions: ^0.6
+
+
+build-dependencies:
+
+  rustc_version: ^0.2
