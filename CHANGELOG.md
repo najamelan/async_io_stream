@@ -1,4 +1,9 @@
-# ws_stream_io - CHANGELOG
+# async_io_stream - CHANGELOG
+
+
+## 0.2 - 2020-12-29
+
+  - support tokio version 1.
 
 
 ## 0.2.0-beta.1 - 2020-10-29
