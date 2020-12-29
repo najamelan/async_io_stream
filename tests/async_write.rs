@@ -277,7 +277,7 @@ fn tester_tokio( ra: Vec<ReadyAction>, sa: Vec<SendAction>, fa: Vec<FlushAction>
 	let waker  = noop_waker();
 	let mut cx = Context::from_waker( &waker );
 
-	let out = Pin::new( &mut wrap ).poll_write( &mut cx, &vec![ 1 ] );
+	let out = Pin::new( &mut wrap ).poll_write( &mut cx, &[ 1 ] );
 
 	assert_matches!( out, Poll::Ready( Err(e) ) => assert_eq!( e.kind(), io::ErrorKind::NotConnected ) );
 }
@@ -310,7 +310,7 @@ fn tester_tokio( ra: Vec<ReadyAction>, sa: Vec<SendAction>, fa: Vec<FlushAction>
 	let waker  = noop_waker();
 	let mut cx = Context::from_waker( &waker );
 
-	let out = Pin::new( &mut wrap ).poll_write( &mut cx, &vec![ 1 ] );
+	let out = Pin::new( &mut wrap ).poll_write( &mut cx, &[ 1 ] );
 
 	assert_matches!( out, Poll::Ready( Err(e) ) => assert_eq!( e.kind(), io::ErrorKind::NotConnected ) );
 }
@@ -341,7 +341,7 @@ fn tester_tokio( ra: Vec<ReadyAction>, sa: Vec<SendAction>, fa: Vec<FlushAction>
 	let waker  = noop_waker();
 	let mut cx = Context::from_waker( &waker );
 
-	let out = Pin::new( &mut wrap ).poll_write_vectored( &mut cx, &vec![ IoSlice::new( &[] ) ] );
+	let out = Pin::new( &mut wrap ).poll_write_vectored( &mut cx, &[ IoSlice::new( &[] ) ] );
 
 	assert_matches!( out, Poll::Ready( Err(e) ) => assert_eq!( e.kind(), io::ErrorKind::NotConnected ) );
 }
@@ -374,7 +374,7 @@ fn tester_tokio( ra: Vec<ReadyAction>, sa: Vec<SendAction>, fa: Vec<FlushAction>
 	let waker  = noop_waker();
 	let mut cx = Context::from_waker( &waker );
 
-	let out = Pin::new( &mut wrap ).poll_write_vectored( &mut cx, &vec![ IoSlice::new( &[] ) ] );
+	let out = Pin::new( &mut wrap ).poll_write_vectored( &mut cx, &[ IoSlice::new( &[] ) ] );
 
 	assert_matches!( out, Poll::Ready( Err(e) ) => assert_eq!( e.kind(), io::ErrorKind::NotConnected ) );
 }
