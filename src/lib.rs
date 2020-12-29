@@ -712,6 +712,7 @@ where
 						self.state = ReadState::Ready
 						{
 							chunk: Cursor::new( chunk ),
+
 						}.into();
 					}
 				}

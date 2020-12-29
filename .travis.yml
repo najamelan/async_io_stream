@@ -38,6 +38,7 @@ jobs:
 
       script:
         - bash ci/test.bash
+        - bash ci/deny.bash
 
 
     - name: linux nightly rust
