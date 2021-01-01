@@ -11,6 +11,7 @@ package:
   #
   # - `touch **.rs && cargo clippy --tests --examples --benches --all-features`
   # - `cargo update`
+  # - `cargo outdated --root-deps-only`
   # - `cargo udeps --all-targets --all-features`
   # - `cargo audit`
   # - `cargo crev crate verify --show-all --recursive` and review.
@@ -24,7 +25,7 @@ package:
   # - `git tag x.x.x` with version number.
   # - `git push && git push --tags`
   #
-  version       : 0.2.0-beta.1
+  version       : 0.2.0
   name          : async_io_stream
   authors       : [ Naja Melan <najamelan@autistici.org> ]
   description   : IntoAsyncRead on steriods
@@ -71,7 +72,7 @@ dependencies:
   futures-sink : ^0.3 # Sink
   futures-task : ^0.3 # noop_waker
   pharos       : { version: ^0.4, optional: true }
-  tokio        : { version: ^0.3, optional: true }
+  tokio        : { version: ^1  , optional: true }
 
 
   # Private dependencies
@@ -80,14 +81,12 @@ dependencies:
 dev-dependencies:
 
   assert_matches   : ^1
-  async-std        : { version: ^1, features: [ attributes ] }
-  flexi_logger     : ^0.15
+  # flexi_logger     : ^0.15
   futures          : ^0.3
-  futures-test     : ^0.3
   log              : ^0.4
   pretty_assertions: ^0.6
 
 
 build-dependencies:
 
-  rustc_version: ^0.2
+  rustc_version: ^0.3

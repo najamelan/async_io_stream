@@ -7,7 +7,7 @@ status = "actively-developed"
 repository = "najamelan/ws_stream_io"
 
 [build-dependencies]
-rustc_version = "^0.2"
+rustc_version = "^0.3"
 
 [dependencies]
 futures-core = "^0.3"
@@ -21,19 +21,13 @@ version = "^0.4"
 
 [dependencies.tokio]
 optional = true
-version = "^0.3"
+version = "^1"
 
 [dev-dependencies]
 assert_matches = "^1"
-flexi_logger = "^0.15"
 futures = "^0.3"
-futures-test = "^0.3"
 log = "^0.4"
 pretty_assertions = "^0.6"
-
-[dev-dependencies.async-std]
-features = ["attributes"]
-version = "^1"
 
 [features]
 map_pharos = ["pharos"]
@@ -51,7 +45,7 @@ license = "Unlicense"
 name = "async_io_stream"
 readme = "README.md"
 repository = "https://github.com/najamelan/async_io_stream"
-version = "0.2.0-beta.1"
+version = "0.2.0"
 
 [package.metadata]
 [package.metadata.docs]

@@ -24,7 +24,7 @@ use
 };
 
 
-fn tester( ra: Vec<ReadyAction>, sa: Vec<SendAction>, fa: Vec<FlushAction>, mut data: Vec<Vec<u8>> )
+fn tester( ra: Vec<ReadyAction>, sa: Vec<SendAction>, fa: Vec<FlushAction>, data: Vec<Vec<u8>> )
 
 	-> ( IoStream<TestSink, Vec<u8>>, Poll<io::Result<usize>> )
 {
@@ -34,14 +34,14 @@ fn tester( ra: Vec<ReadyAction>, sa: Vec<SendAction>, fa: Vec<FlushAction>, mut 
 	let mut bufs = Vec::new();
 
 	let length   = data.len();
-	let mut refs = data.split_at_mut(0).1;
+	let mut refs = data.split_at(0).1;
 
 	for _ in 0..length
 	{
-		let (first, tail) = refs.split_at_mut( 1 );
+		let (first, tail) = refs.split_at( 1 );
 		refs = tail;
 
-		bufs.push( IoSlice::new( &mut first[0] ) );
+		bufs.push( IoSlice::new( &first[0] ) );
 	}
 
 	let waker  = noop_waker();
@@ -171,7 +171,7 @@ fn tester( ra: Vec<ReadyAction>, sa: Vec<SendAction>, fa: Vec<FlushAction>, mut 
 	let waker  = noop_waker();
 	let mut cx = Context::from_waker( &waker );
 
-	let out = Pin::new( &mut wrap ).poll_write( &mut cx, &vec![ 1 ] );
+	let out = Pin::new( &mut wrap ).poll_write( &mut cx, &[ 1 ] );
 
 	assert_matches!( out, Poll::Ready( Err(e) ) => assert_eq!( e.kind(), io::ErrorKind::NotConnected ) );
 }
@@ -202,7 +202,7 @@ fn tester( ra: Vec<ReadyAction>, sa: Vec<SendAction>, fa: Vec<FlushAction>, mut 
 	let waker  = noop_waker();
 	let mut cx = Context::from_waker( &waker );
 
-	let out = Pin::new( &mut wrap ).poll_write_vectored( &mut cx, &vec![ IoSlice::new( &[] ) ] );
+	let out = Pin::new( &mut wrap ).poll_write_vectored( &mut cx, &[ IoSlice::new( &[] ) ] );
 
 	assert_matches!( out, Poll::Ready( Err(e) ) => assert_eq!( e.kind(), io::ErrorKind::NotConnected ) );
 }

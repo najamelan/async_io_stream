@@ -1,4 +1,5 @@
 #![ allow( dead_code ) ]
+#![ allow( clippy::suspicious_else_formatting ) ]
 
 use
 {
@@ -84,7 +85,7 @@ impl Stream for TestStream
 
 		else
 		{
-			Poll::Ready( None.into() )
+			Poll::Ready( None )
 		}
 	}
 }
