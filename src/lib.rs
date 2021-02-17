@@ -28,12 +28,9 @@
 //
 use
 {
-	std          :: { fmt, io::{ self, Read, Cursor, IoSlice, IoSliceMut, BufRead }    } ,
-	std          :: { pin::Pin, task::{ Poll, Context }, borrow::{ Borrow, BorrowMut } } ,
-	futures_core :: { TryStream, ready                                                 } ,
-	futures_sink :: { Sink                                                             } ,
-	futures_task :: { noop_waker                                                       } ,
-	futures_io   :: { AsyncRead, AsyncWrite, AsyncBufRead                              } ,
+	std          :: { fmt, io::{ self, Read, Cursor, IoSlice, IoSliceMut, BufRead }                 } ,
+	std          :: { pin::Pin, task::{ Poll, Context }, borrow::{ Borrow, BorrowMut }              } ,
+	futures      :: { TryStream, ready, Sink, task::noop_waker, AsyncRead, AsyncWrite, AsyncBufRead } ,
 };
 
 
@@ -43,7 +40,11 @@ use tokio::io::{ AsyncRead as TokAsyncRead, AsyncWrite as TokAsyncWrite };
 
 #[ cfg( feature = "map_pharos" ) ]
 //
-use pharos::{ Observable, ObserveConfig, Events };
+use
+{
+	pharos::{ Observable, ObserveConfig, Observe },
+	futures::FutureExt
+};
 
 
 // A buffer for the current message or error.
@@ -651,13 +652,21 @@ where
 
 	St: Sink< I, Error=io::Error > + TryStream< Ok=I, Error=io::Error > + Observable<Ev> + Unpin,
 	Ev: Clone + Send + 'static,
+	St: Send,
+	I: Send,
 
 {
 	type Error = <St as Observable<Ev>>::Error;
 
-	fn observe( &mut self, options: ObserveConfig<Ev> ) -> Result< Events<Ev>, Self::Error >
+	fn observe( &mut self, options: ObserveConfig<Ev> ) -> Observe< '_, Ev, Self::Error >
 	{
-		self.inner.observe( options ).map_err( Into::into )
+		async move
+		{
+			let result = self.inner.observe( options ).await;
+
+			result.map_err( Into::into )
+
+		}.boxed()
 	}
 }
 

@@ -1,5 +1,9 @@
 # async_io_stream - CHANGELOG
 
+## 0.3 - 2021-02-17
+
+  - update pharos to 0.5
+
 
 ## 0.2 - 2020-12-29
 
