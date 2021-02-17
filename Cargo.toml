@@ -10,14 +10,11 @@ repository = "najamelan/ws_stream_io"
 rustc_version = "^0.3"
 
 [dependencies]
-futures-core = "^0.3"
-futures-io = "^0.3"
-futures-sink = "^0.3"
-futures-task = "^0.3"
+futures = "^0.3"
 
 [dependencies.pharos]
 optional = true
-version = "^0.4"
+version = "^0.5"
 
 [dependencies.tokio]
 optional = true
@@ -45,7 +42,7 @@ license = "Unlicense"
 name = "async_io_stream"
 readme = "README.md"
 repository = "https://github.com/najamelan/async_io_stream"
-version = "0.2.0"
+version = "0.3.0"
 
 [package.metadata]
 [package.metadata.docs]

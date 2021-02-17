@@ -47,14 +47,14 @@ With [cargo yaml](https://gitlab.com/storedbox/cargo-yaml):
 ```yaml
 dependencies:
 
-   async_io_stream: ^0.2
+   async_io_stream: ^0.3
 ```
 
 With Cargo.toml
 ```toml
 [dependencies]
 
-    async_io_stream = "0.2"
+    async_io_stream = "0.3"
 ```
 
 ### Upgrade
