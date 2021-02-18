@@ -25,7 +25,7 @@ package:
   # - `git tag x.x.x` with version number.
   # - `git push && git push --tags`
   #
-  version       : 0.3.0
+  version       : 0.3.1
   name          : async_io_stream
   authors       : [ Naja Melan <najamelan@autistici.org> ]
   description   : IntoAsyncRead on steriods
@@ -58,7 +58,7 @@ features:
 
 badges:
 
-  maintenance : { status     : actively-developed       }
+  maintenance : { status     : actively-developed     }
   travis-ci   : { repository : najamelan/ws_stream_io }
 
 
