@@ -1,7 +1,7 @@
 # async_io_stream
 
 [![standard-readme compliant](https://img.shields.io/badge/readme%20style-standard-brightgreen.svg?style=flat-square)](https://github.com/RichardLitt/standard-readme)
-[![Build Status](https://api.travis-ci.org/najamelan/async_io_stream.svg?branch=master)](https://travis-ci.org/najamelan/async_io_stream)
+[![Build Status](https://github.com/najamelan/async_io_stream/workflows/ci/badge.svg?branch=master)](https://github.com/najamelan/async_io_stream/actions)
 [![Docs](https://docs.rs/async_io_stream/badge.svg)](https://docs.rs/async_io_stream)
 [![crates.io](https://img.shields.io/crates/v/async_io_stream.svg)](https://crates.io/crates/async_io_stream)
 

@@ -42,7 +42,7 @@ use tokio::io::{ AsyncRead as TokAsyncRead, AsyncWrite as TokAsyncWrite };
 //
 use
 {
-	pharos::{ Observable, ObserveConfig, Observe },
+	pharos::{ Observable, ObservableLocal, ObserveConfig, Observe, ObserveLocal },
 	futures::FutureExt
 };
 
@@ -667,6 +667,36 @@ where
 			result.map_err( Into::into )
 
 		}.boxed()
+	}
+}
+
+
+
+
+#[ cfg( feature = "map_pharos" ) ]
+//
+#[ cfg_attr( nightly, doc(cfg( feature = "map_pharos" )) ) ]
+//
+/// This impl requires the `map_pharos` feature.
+//
+impl<St, I, Ev> ObservableLocal<Ev> for IoStream<St, I>
+where
+
+	St: Sink< I, Error=io::Error > + TryStream< Ok=I, Error=io::Error > + ObservableLocal<Ev> + Unpin,
+	Ev: Clone + Send + 'static,
+
+{
+	type Error = <St as ObservableLocal<Ev>>::Error;
+
+	fn observe_local( &mut self, options: ObserveConfig<Ev> ) -> ObserveLocal< '_, Ev, Self::Error >
+	{
+		async move
+		{
+			let result = self.inner.observe_local( options ).await;
+
+			result.map_err( Into::into )
+
+		}.boxed_local()
 	}
 }
 
