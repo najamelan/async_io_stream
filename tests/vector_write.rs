@@ -19,7 +19,7 @@ use
 	futures           :: { *, task::noop_waker                            } ,
 	std               :: { task::{ Poll, Context }, pin::Pin, io::IoSlice } ,
 	pretty_assertions :: { assert_eq                                      } ,
-	assert_matches    :: { *                                              } ,
+	assert_matches    :: { assert_matches                                 } ,
 	// log            :: { *                                              } ,
 };
 
