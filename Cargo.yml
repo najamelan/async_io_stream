@@ -81,9 +81,9 @@ dev-dependencies:
   # flexi_logger     : ^0.15
   futures          : ^0.3
   log              : ^0.4
-  pretty_assertions: ^0.6
+  pretty_assertions: ^0.7
 
 
 build-dependencies:
 
-  rustc_version: ^0.3
+  rustc_version: ^0.4
