@@ -7,7 +7,7 @@ status = "actively-developed"
 repository = "najamelan/ws_stream_io"
 
 [build-dependencies]
-rustc_version = "^0.3"
+rustc_version = "^0.4"
 
 [dependencies]
 futures = "^0.3"
@@ -24,7 +24,7 @@ version = "^1"
 assert_matches = "^1"
 futures = "^0.3"
 log = "^0.4"
-pretty_assertions = "^0.6"
+pretty_assertions = "^1"
 
 [features]
 map_pharos = ["pharos"]
@@ -35,14 +35,14 @@ authors = ["Naja Melan <najamelan@autistici.org>"]
 categories = ["asynchronous", "network-programming"]
 description = "IntoAsyncRead on steriods"
 documentation = "https://docs.rs/async_io_stream"
-edition = "2018"
+edition = "2021"
 exclude = ["benches", "examples", "tests"]
 keywords = ["futures", "io", "async", "asyncread", "asyncwrite"]
 license = "Unlicense"
 name = "async_io_stream"
 readme = "README.md"
 repository = "https://github.com/najamelan/async_io_stream"
-version = "0.3.2"
+version = "0.3.3"
 
 [package.metadata]
 [package.metadata.docs]

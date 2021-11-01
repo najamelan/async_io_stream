@@ -3,7 +3,16 @@
 
 ## [Unreleased]
 
-[Unreleased]: https://github.com/najamelan/async_io_stream/compare/0.3.1...dev
+[Unreleased]: https://github.com/najamelan/async_io_stream/compare/0.3.3...dev
+
+
+## [0.3.3]
+
+[Unreleased]: https://github.com/najamelan/async_io_stream/compare/0.3.2...0.3.3
+
+### Fixed
+
+  - update deps and migrate to edition 2021.
 
 
 ## [0.3.2] - 2021-06-10
