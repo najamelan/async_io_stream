@@ -55,8 +55,18 @@ jobs:
       - name: Run tests
         run : bash ci/test.bash
 
+      - name: Install cargo-tarpaulin binary crate
+        uses: actions-rs/install@v0.1
+        with:
+          crate: cargo-tarpaulin
+          version: latest
+          use-tool-cache: true
 
-      - name: Check coverage
-        run: bash ci/coverage.bash
+      - name: Run cargo-tarpaulin
+        run : |
+          cargo tarpaulin --out Xml
+
+      - name: Upload to codecov.io
+        uses: codecov/codecov-action@v1.5.2
 
 
