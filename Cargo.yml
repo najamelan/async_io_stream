@@ -25,7 +25,7 @@ package:
   # - `git tag x.x.x` with version number.
   # - `git push && git push --tags`
   #
-  version       : 0.3.2
+  version       : 0.3.3
   name          : async_io_stream
   authors       : [ Naja Melan <najamelan@autistici.org> ]
   description   : IntoAsyncRead on steriods
@@ -35,9 +35,8 @@ package:
   keywords      : [ futures, io, async, asyncread, asyncwrite ]
   categories    : [ asynchronous, network-programming ]
   license       : Unlicense
-  edition       : "2018"
+  edition       : "2021"
   exclude       : [ benches, examples, tests ]
-
   metadata:
     docs:
       rs:
@@ -81,7 +80,7 @@ dev-dependencies:
   # flexi_logger     : ^0.15
   futures          : ^0.3
   log              : ^0.4
-  pretty_assertions: ^0.7
+  pretty_assertions: ^1
 
 
 build-dependencies:
